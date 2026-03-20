@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>YouTube RAG Chatbot</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: #0f0f0f;
+            color: #e0e0e0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            padding: 30px 16px;
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            color: #ff4444;
+            margin-bottom: 6px;
+        }
+
+        .subtitle {
+            font-size: 0.9rem;
+            color: #888;
+            margin-bottom: 28px;
+        }
+
+        .card {
+            background: #1a1a1a;
+            border: 1px solid #2a2a2a;
+            border-radius: 12px;
+            padding: 24px;
+            width: 100%;
+            max-width: 700px;
+            margin-bottom: 20px;
+        }
+
+        label {
+            font-size: 0.85rem;
+            color: #aaa;
+            display: block;
+            margin-bottom: 6px;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 10px 14px;
+            background: #111;
+            border: 1px solid #333;
+            border-radius: 8px;
+            color: #fff;
+            font-size: 0.95rem;
+            margin-bottom: 14px;
+            outline: none;
+            transition: border 0.2s;
+        }
+
+        input:focus { border-color: #ff4444; }
+
+        button {
+            background: #ff4444;
+            color: #fff;
+            border: none;
+            padding: 10px 22px;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        button:hover { background: #cc0000; }
+        button:disabled { background: #555; cursor: not-allowed; }
+
+        #status {
+            margin-top: 12px;
+            font-size: 0.88rem;
+            min-height: 20px;
+        }
+
+        .success { color: #4caf50; }
+        .error   { color: #f44336; }
+        .loading { color: #ffb300; }
+
+        #chat-box {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            max-height: 380px;
+            overflow-y: auto;
+            margin-bottom: 16px;
+            padding-right: 4px;
+        }
+
+        .msg {
+            padding: 10px 14px;
+            border-radius: 10px;
+            font-size: 0.92rem;
+            line-height: 1.5;
+            max-width: 88%;
+        }
+
+        .msg.user {
+            background: #ff4444;
+            color: #fff;
+            align-self: flex-end;
+        }
+
+        .msg.bot {
+            background: #2a2a2a;
+            color: #e0e0e0;
+            align-self: flex-start;
+        }
+
+        .input-row {
+            display: flex;
+            gap: 10px;
+        }
+
+        .input-row input {
+            flex: 1;
+            margin-bottom: 0;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>🎬 YouTube RAG Chatbot</h1>
+    <p class="subtitle">Ask questions about any YouTube video using AI</p>
+
+    <!-- Load Video Card -->
+    <div class="card">
+        <label>YouTube Video URL</label>
+        <input type="text" id="video-url" placeholder="https://www.youtube.com/watch?v=..." />
+        <button id="load-btn" onclick="loadVideo()">Load Video</button>
+        <div id="status"></div>
+    </div>
+
+    <!-- Chat Card -->
+    <div class="card">
+        <div id="chat-box">
+            <div class="msg bot">👋 Load a YouTube video above, then ask me anything about it!</div>
+        </div>
+        <div class="input-row">
+            <input type="text" id="question" placeholder="Ask a question about the video..." onkeydown="if(event.key==='Enter') askQuestion()" />
+            <button id="ask-btn" onclick="askQuestion()" disabled>Ask</button>
+        </div>
+    </div>
+
+<script>
+    async function loadVideo() {
+        const url = document.getElementById('video-url').value.trim();
+        const status = document.getElementById('status');
+        const btn = document.getElementById('load-btn');
+
+        if (!url) {
+            status.innerHTML = '<span class="error">Please enter a YouTube URL.</span>';
+            return;
+        }
+
+        btn.disabled = true;
+        status.innerHTML = '<span class="loading">⏳ Fetching transcript and building index...</span>';
+
+        try {
+            const res = await fetch('/load', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url })
+            });
+            const data = await res.json();
+
+            if (data.error) {
+                status.innerHTML = `<span class="error">❌ ${data.error}</span>`;
+            } else {
+                status.innerHTML = `<span class="success">✅ ${data.message}</span>`;
+                document.getElementById('ask-btn').disabled = false;
+                appendMessage('bot', '✅ Video loaded! Ask me anything about it.');
+            }
+        } catch (e) {
+            status.innerHTML = `<span class="error">❌ Network error: ${e.message}</span>`;
+        }
+
+        btn.disabled = false;
+    }
+
+    async function askQuestion() {
+        const qInput = document.getElementById('question');
+        const question = qInput.value.trim();
+        if (!question) return;
+
+        appendMessage('user', question);
+        qInput.value = '';
+
+        const thinking = appendMessage('bot', '🤔 Thinking...');
+
+        try {
+            const res = await fetch('/ask', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ question })
+            });
+            const data = await res.json();
+            thinking.textContent = data.error ? `❌ ${data.error}` : data.answer;
+        } catch (e) {
+            thinking.textContent = `❌ Network error: ${e.message}`;
+        }
+    }
+
+    function appendMessage(role, text) {
+        const box = document.getElementById('chat-box');
+        const div = document.createElement('div');
+        div.className = `msg ${role}`;
+        div.textContent = text;
+        box.appendChild(div);
+        box.scrollTop = box.scrollHeight;
+        return div;
+    }
+</script>
+</body>
+</html>
