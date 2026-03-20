@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 flask==3.0.0
 langchain==0.2.16
 langchain-core==0.2.38
@@ -10,3 +11,13 @@ youtube-transcript-api==1.2.4
 python-dotenv==1.0.1
 tiktoken==0.7.0
 requests==2.31.0
+=======
+streamlit
+openai
+langchain
+langchain_community
+faiss-cpu
+youtube-transcript-api
+python-dotenv
+tiktoken
+>>>>>>> 8e797d41eb79208c674403988d5c18ff9020d4e4
