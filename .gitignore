@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # API keys - NEVER push this
 .env
 
@@ -10,11 +9,8 @@ __pycache__/
 *.py[cod]
 *.pyo
 
-# FAISS index (auto-generated)
+# ChromaDB and FAISS data (auto-generated)
 data/
-
-# Debug scripts
-check_*.py
 
 # IDE
 .vscode/
@@ -26,30 +22,3 @@ Thumbs.db
 
 # Logs
 *.log
-=======
-# Secrets
-.env
-*.env
-
-# Python
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
-
-# Virtual environments
-myenv/
-venv/
-
-# Streamlit
-.streamlit/
-
-# Jupyter
-.ipynb_checkpoints/
-
-env/
-venv/
-__pycache__/
-*.pyc
-.DS_Store
->>>>>>> 8e797d41eb79208c674403988d5c18ff9020d4e4
