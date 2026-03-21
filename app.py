@@ -24,7 +24,7 @@ def index():
 def load_video():
     if not GOOGLE_API_KEY:
         return jsonify({
-            "error": "Google API key not found. Please add GOOGLE_API_KEY=your_key to your .env file."
+            "error": "Google API key not found."
         }), 400
 
     data = request.get_json()
@@ -70,5 +70,7 @@ def ask():
         return jsonify({"error": str(e)}), 500
 
 
+# Required for Render deployment
 if __name__ == "__main__":
-    app.run(debug=True, port=5000)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port, debug=False)
